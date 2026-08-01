@@ -1,0 +1,29 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: seva-ingress
+  namespace: seva-sarathi
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+spec:
+  ingressClassName: nginx
+  rules:
+    - http:
+        paths:
+          # Web App Dashboard UI
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web-app-service
+                port:
+                  number: 3000
+          # WebRTC Signaling API
+          - path: /webrtc
+            pathType: Prefix
+            backend:
+              service:
+                name: webrtc-gateway-service
+                port:
+                  number: 8080
