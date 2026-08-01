@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webrtc-gateway
+  namespace: seva-sarathi
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: webrtc-gateway
+  template:
+    metadata:
+      labels:
+        app: webrtc-gateway
+    spec:
+      containers:
+        - name: webrtc-gateway
+          image: sevasarathi/webrtc-gateway:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              name: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: webrtc-gateway-service
+  namespace: seva-sarathi
+spec:
+  type: NodePort
+  selector:
+    app: webrtc-gateway
+  ports:
+    - port: 8080
+      targetPort: 8080
+      nodePort: 30808 # Direct access via http://<SERVER_IP>:30808 or reverse proxied

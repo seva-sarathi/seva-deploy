@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ros2-core
+  namespace: seva-sarathi
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ros2-core
+  template:
+    metadata:
+      labels:
+        app: ros2-core
+    spec:
+      hostNetwork: true # Allows DDS UDP Multicast discovery on LAN
+      dnsPolicy: ClusterFirstWithHostNet
+      containers:
+        - name: ros2-node
+          image: sevasarathi/ros2-core:latest
+          imagePullPolicy: Always
+          env:
+            - name: ROS_DOMAIN_ID
+              value: "0"
+            - name: RMW_IMPLEMENTATION
+              value: "rmw_cyclonedds_cpp"
+            - name: MQTT_HOST
+              value: "127.0.0.1"
+            - name: MQTT_PORT
+              value: "1883"

@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mqtt-broker
+  namespace: seva-sarathi
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mqtt-broker
+  template:
+    metadata:
+      labels:
+        app: mqtt-broker
+    spec:
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      containers:
+        - name: mosquitto
+          image: sevasarathi/mqtt-broker:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 1883
+              name: mqtt
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mqtt-broker-service
+  namespace: seva-sarathi
+spec:
+  type: ClusterIP
+  selector:
+    app: mqtt-broker
+  ports:
+    - port: 1883
+      targetPort: 1883
