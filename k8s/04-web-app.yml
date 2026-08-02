@@ -1,51 +1,160 @@
+# 1. PostgreSQL Database
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: web-app
+  name: postgres
   namespace: seva-sarathi
-  labels:
-    app: web-app
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: web-app
+      app: postgres
   template:
     metadata:
       labels:
-        app: web-app
+        app: postgres
     spec:
       containers:
-        - name: web-app
-          image: sevasarathi/web-app:latest
-          imagePullPolicy: Always
+        - name: postgres
+          image: postgres:17-alpine
           ports:
-            - containerPort: 3000
-              name: http
+            - containerPort: 5432
           env:
-            - name: NODE_ENV
-              value: "production"
-            - name: PORT
-              value: "3000"
-          resources:
-            requests:
-              cpu: "200m"
-              memory: "256Mi"
-            limits:
-              cpu: "1"
-              memory: "1Gi"
+            - name: POSTGRES_USER
+              value: "postgres"
+            - name: POSTGRES_PASSWORD
+              value: "password"
+            - name: POSTGRES_DB
+              value: "sevasarathi"
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: web-app-service
+  name: postgres
+  namespace: seva-sarathi
+spec:
+  selector:
+    app: postgres
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+# 2. Redis Cache
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: seva-sarathi
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          ports:
+            - containerPort: 6379
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: seva-sarathi
+spec:
+  selector:
+    app: redis
+  ports:
+    - port: 6379
+      targetPort: 6379
+---
+# 3. Node.js Express API Server
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-app-server
+  namespace: seva-sarathi
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web-app-server
+  template:
+    metadata:
+      labels:
+        app: web-app-server
+    spec:
+      containers:
+        - name: web-app-server
+          image: sevasarathi/web-app-server:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5000
+          env:
+            - name: PORT
+              value: "5000"
+            - name: DATABASE_URL
+              value: "postgresql://postgres:password@postgres:5432/sevasarathi"
+            - name: REDIS_URL
+              value: "redis://redis:6379"
+            - name: NODE_ENV
+              value: "production"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-app-server
+  namespace: seva-sarathi
+spec:
+  selector:
+    app: web-app-server
+  ports:
+    - port: 5000
+      targetPort: 5000
+---
+# 4. Next.js Frontend Client
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-app-client
+  namespace: seva-sarathi
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web-app-client
+  template:
+    metadata:
+      labels:
+        app: web-app-client
+    spec:
+      containers:
+        - name: web-app-client
+          image: sevasarathi/web-app-client:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+          env:
+            - name: PORT
+              value: "3000"
+            - name: NEXT_PUBLIC_API_URL
+              value: "http://web-app-server:5000"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-app-client
   namespace: seva-sarathi
 spec:
   type: NodePort
   selector:
-    app: web-app
+    app: web-app-client
   ports:
     - port: 3000
       targetPort: 3000
-      nodePort: 30300 # Direct access on LAN via http://<SERVER_IP>:30300
-      name: http
+      nodePort: 30300

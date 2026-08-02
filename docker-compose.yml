@@ -3,7 +3,7 @@ version: '3.8'
 services:
   # 1. CCTV Video Ingestion Gateway
   webrtc-gateway:
-    image: sevasarathi/webrtc-gateway:latest
+    image: nrgchandra/webrtc-gateway:latest
     container_name: seva_webrtc_gateway
     restart: always
     ports:
@@ -14,7 +14,7 @@ services:
 
   # 2. AGV Telemetry Broker
   mqtt-broker:
-    image: sevasarathi/mqtt-broker:latest
+    image: nrgchandra/mqtt-broker:latest
     container_name: seva_mqtt_broker
     restart: always
     ports:
@@ -25,7 +25,7 @@ services:
 
   # 3. AGV ROS 2 Brain & Control Node
   ros2-core:
-    image: sevasarathi/ros2-core:latest
+    image: nrgchandra/ros2-core:latest
     container_name: seva_ros2_core
     restart: always
     network_mode: "host" # Required for DDS multicast discovery across LAN
