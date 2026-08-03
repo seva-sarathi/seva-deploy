@@ -1,9 +1,8 @@
-version: '3.8'
-
 services:
+
   # 1. CCTV Video Ingestion Gateway
   webrtc-gateway:
-    image: nrgchandra/webrtc-gateway:latest
+    image: nrgchandra/sevasarathi-webrtc-gateway:latest
     container_name: seva_webrtc_gateway
     restart: always
     ports:
@@ -14,7 +13,7 @@ services:
 
   # 2. AGV Telemetry Broker
   mqtt-broker:
-    image: nrgchandra/mqtt-broker:latest
+    image: nrgchandra/sevasarathi-mqtt-broker:latest
     container_name: seva_mqtt_broker
     restart: always
     ports:
@@ -28,12 +27,28 @@ services:
     image: nrgchandra/ros2-core:latest
     container_name: seva_ros2_core
     restart: always
-    network_mode: "host" # Required for DDS multicast discovery across LAN
+    network_mode: "host"
     environment:
       - ROS_DOMAIN_ID=0
       - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
       - MQTT_HOST=localhost
       - MQTT_PORT=1883
+
+  # 4. Web App Backend Server
+  web-server:
+    image: nrgchandra/web-app-server:latest
+    container_name: seva_web_server
+    restart: always
+    ports:
+      - "5000:5000"
+
+  # 5. Web App Frontend Client
+  web-client:
+    image: nrgchandra/web-app-client:latest
+    container_name: seva_web_client
+    restart: always
+    ports:
+      - "3000:3000"
 
 volumes:
   mqtt_data:
