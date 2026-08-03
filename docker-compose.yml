@@ -1,17 +1,18 @@
 services:
 
-  # 1. CCTV Video Ingestion Gateway
+  # 1. WebRTC Video Ingestion Gateway
   webrtc-gateway:
     image: nrgchandra/sevasarathi-webrtc-gateway:latest
     container_name: seva_webrtc_gateway
     restart: always
+    command: python -m web.signaling.server
     ports:
-      - "8080:8080"
+      - "8081:8081"
     environment:
-      - PORT=8080
+      - PORT=8081
       - RECORD_STREAM=false
 
-  # 2. AGV Telemetry Broker
+  # 2. MQTT Telemetry Broker
   mqtt-broker:
     image: nrgchandra/sevasarathi-mqtt-broker:latest
     container_name: seva_mqtt_broker
@@ -40,7 +41,7 @@ services:
     container_name: seva_web_server
     restart: always
     ports:
-      - "5000:5000"
+      - "5001:5000"
 
   # 5. Web App Frontend Client
   web-client:
