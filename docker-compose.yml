@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  # 1. WebRTC Video Ingestion Gateway
+  # 1. WebRTC Gateway
   webrtc-gateway:
     image: nrgchandra/sevasarathi-webrtc-gateway:latest
     container_name: seva_webrtc_gateway
@@ -12,7 +12,7 @@ services:
       - PORT=8081
       - RECORD_STREAM=false
 
-  # 2. MQTT Telemetry Broker
+  # 2. MQTT Broker
   mqtt-broker:
     image: nrgchandra/sevasarathi-mqtt-broker:latest
     container_name: seva_mqtt_broker
@@ -45,7 +45,7 @@ services:
     ports:
       - "6379:6379"
 
-  # 5. AGV ROS 2 Brain & Control Node
+  # 5. ROS 2 Core
   ros2-core:
     image: nrgchandra/ros2-core:latest
     container_name: seva_ros2_core
@@ -59,40 +59,30 @@ services:
     depends_on:
       - mqtt-broker
 
-  # 6. Web App Backend Server
+  # 6. Web App Backend (Mapped to host port 5000)
   web-server:
-    build:
-      context: ./webapp/server
-      dockerfile: Dockerfile
     image: nrgchandra/web-app-server:latest
     container_name: seva_web_server
     restart: always
     ports:
-      - "5001:5001"
+      - "5000:5000"
     environment:
-      - PORT=5001
+      - PORT=5000
       - DATABASE_URL=postgresql://postgres:password@postgres:5432/sevasarathi
       - REDIS_URL=redis://redis:6379
-      - JWT_SECRET=production_jwt_secret_key_123
+      - JWT_SECRET=dev_jwt_secret_key_123
       - NODE_ENV=production
     depends_on:
       - postgres
       - redis
 
-  # 7. Web App Frontend Client
+  # 7. Web App Frontend (Mapped to host port 5001)
   web-client:
-    build:
-      context: ./webapp/client
-      dockerfile: Dockerfile
-      args:
-        - NEXT_PUBLIC_API_URL=http://localhost:5001
-        - NEXT_PUBLIC_WEBRTC_URL=ws://localhost:8081
-        - NEXT_PUBLIC_MQTT_URL=ws://localhost:1883
     image: nrgchandra/web-app-client:latest
     container_name: seva_web_client
     restart: always
     ports:
-      - "3000:3000"
+      - "5001:3000"
     depends_on:
       - web-server
 
