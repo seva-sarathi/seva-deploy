@@ -51,6 +51,20 @@ services:
     ports:
       - "3000:3000"
 
+  postgres-db:
+    image: postgres:16-alpine
+    container_name: seva_postgres_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1608
+      POSTGRES_DB: udemydb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
 volumes:
   mqtt_data:
   mqtt_log:
+  postgres_data:
