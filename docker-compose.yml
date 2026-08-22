@@ -1,11 +1,11 @@
-services:
+version: '3.8'
 
+services:
   # 1. WebRTC Video Ingestion Gateway
   webrtc-gateway:
     image: nrgchandra/sevasarathi-webrtc-gateway:latest
     container_name: seva_webrtc_gateway
     restart: always
-    command: python -m web.signaling.server
     ports:
       - "8081:8081"
     environment:
@@ -23,7 +23,29 @@ services:
       - mqtt_data:/mosquitto/data
       - mqtt_log:/mosquitto/log
 
-  # 3. AGV ROS 2 Brain & Control Node
+  # 3. Database
+  postgres:
+    image: postgres:17-alpine
+    container_name: seva_postgres
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: sevasarathi
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # 4. Cache
+  redis:
+    image: redis:7-alpine
+    container_name: seva_redis
+    restart: always
+    ports:
+      - "6379:6379"
+
+  # 5. AGV ROS 2 Brain & Control Node
   ros2-core:
     image: nrgchandra/ros2-core:latest
     container_name: seva_ros2_core
@@ -32,37 +54,47 @@ services:
     environment:
       - ROS_DOMAIN_ID=0
       - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
-      - MQTT_HOST=localhost
+      - MQTT_HOST=127.0.0.1
       - MQTT_PORT=1883
+    depends_on:
+      - mqtt-broker
 
-  # 4. Web App Backend Server
+  # 6. Web App Backend Server
   web-server:
+    build:
+      context: ./webapp/server
+      dockerfile: Dockerfile
     image: nrgchandra/web-app-server:latest
     container_name: seva_web_server
     restart: always
     ports:
-      - "5001:5000"
+      - "5001:5001"
+    environment:
+      - PORT=5001
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/sevasarathi
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=production_jwt_secret_key_123
+      - NODE_ENV=production
+    depends_on:
+      - postgres
+      - redis
 
-  # 5. Web App Frontend Client
+  # 7. Web App Frontend Client
   web-client:
+    build:
+      context: ./webapp/client
+      dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=http://localhost:5001
+        - NEXT_PUBLIC_WEBRTC_URL=ws://localhost:8081
+        - NEXT_PUBLIC_MQTT_URL=ws://localhost:1883
     image: nrgchandra/web-app-client:latest
     container_name: seva_web_client
     restart: always
     ports:
       - "3000:3000"
-
-  postgres-db:
-    image: postgres:16-alpine
-    container_name: seva_postgres_db
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 1608
-      POSTGRES_DB: udemydb
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+    depends_on:
+      - web-server
 
 volumes:
   mqtt_data:
